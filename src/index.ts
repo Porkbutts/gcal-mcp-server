@@ -321,7 +321,7 @@ Use the calendar ID from the results to target a specific calendar in other tool
           content: [
             {
               type: "text",
-              text: "No calendars found. Make sure calendars are shared with the service account's client_email.",
+              text: "No calendars found. Share a calendar with the service account's client_email, then use gcal_add_calendar with the calendar ID to subscribe to it.",
             },
           ],
         };
