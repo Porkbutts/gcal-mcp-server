@@ -4,6 +4,7 @@ An MCP (Model Context Protocol) server for Google Calendar API. This server allo
 
 ## Features
 
+- **Multi-calendar support** — access multiple calendars with one service account
 - **Create events** with title, description, location, and time
 - **List upcoming events** with filtering and search
 - **Get event details** by ID
@@ -53,6 +54,17 @@ claude mcp add-json gcal '{
 ```
 
 ## Available Tools
+
+### gcal_list_calendars
+
+List all calendars the service account has access to. Use this to discover calendar IDs for use with other tools.
+
+### gcal_add_calendar
+
+Subscribe the service account to a shared calendar. After sharing a calendar with the service account in Google Calendar settings, you must call this tool once with the calendar ID to register it. The calendar will then appear in `gcal_list_calendars`.
+
+**Parameters:**
+- `calendar_id` (required): The calendar ID (e.g., `abc123@group.calendar.google.com`, found in Google Calendar > Settings > Integrate calendar)
 
 ### gcal_create_event
 
@@ -120,6 +132,15 @@ Delete an event from the calendar.
 2. Create a **service account** and download the JSON key
 3. Share your calendar with the service account's `client_email` (give "Make changes to events" permission)
 4. Configure the environment variables above
+5. Use `gcal_add_calendar` with the calendar ID to subscribe the service account to it — sharing alone doesn't automatically register the calendar, so this step is required for it to appear in `gcal_list_calendars`
+
+### Multiple Calendars
+
+The service account can access any calendar shared with it. The `GOOGLE_CALENDAR_ID` env var sets a default, but you can pass `calendar_id` to any tool to target a different calendar. To set up multiple calendars:
+
+1. Share each calendar with the service account's `client_email`
+2. Call `gcal_add_calendar` once per calendar to register it
+3. Use `gcal_list_calendars` to see all registered calendars and their IDs
 
 ## License
 
