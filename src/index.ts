@@ -300,6 +300,142 @@ function isDateOnly(dateStr: string): boolean {
 // Register Tools
 
 server.registerTool(
+  "gcal_list_calendars",
+  {
+    title: "List Google Calendars",
+    description: `List all calendars accessible by the service account.
+
+Returns each calendar's ID, name, description, access role, and timezone.
+Use the calendar ID from the results to target a specific calendar in other tools.`,
+    inputSchema: z.object({}).strict(),
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  },
+  async () => {
+    try {
+      const calendar = await getCalendarClient();
+
+      const response = await calendar.calendarList.list();
+      const calendars = response.data.items || [];
+
+      if (calendars.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "No calendars found. Make sure calendars are shared with the service account's client_email.",
+            },
+          ],
+        };
+      }
+
+      const formatted = calendars
+        .map((cal) => {
+          const lines: string[] = [];
+          lines.push(`## ${cal.summary || "(No name)"}`);
+          lines.push(`- **ID**: ${cal.id}`);
+          if (cal.description) {
+            lines.push(`- **Description**: ${cal.description}`);
+          }
+          lines.push(`- **Access Role**: ${cal.accessRole}`);
+          if (cal.timeZone) {
+            lines.push(`- **Timezone**: ${cal.timeZone}`);
+          }
+          if (cal.primary) {
+            lines.push(`- **Primary**: Yes`);
+          }
+          return lines.join("\n");
+        })
+        .join("\n\n---\n\n");
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# Accessible Calendars (${calendars.length})\n\n${formatted}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: handleApiError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "gcal_add_calendar",
+  {
+    title: "Add Calendar to Service Account",
+    description: `Subscribe the service account to a calendar that has been shared with it.
+
+After sharing a calendar with the service account's client_email in Google Calendar settings,
+call this tool with the calendar ID to make it appear in gcal_list_calendars.
+
+The calendar ID is usually in the format: something@group.calendar.google.com
+(found in Google Calendar > Settings > Calendar ID)`,
+    inputSchema: z
+      .object({
+        calendar_id: z
+          .string()
+          .describe(
+            "The ID of the calendar to subscribe to (e.g., 'abc123@group.calendar.google.com')"
+          ),
+      })
+      .strict(),
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  },
+  async (params) => {
+    try {
+      const calendar = await getCalendarClient();
+
+      const response = await calendar.calendarList.insert({
+        requestBody: { id: params.calendar_id },
+      });
+
+      const cal = response.data;
+      return {
+        content: [
+          {
+            type: "text",
+            text:
+              `# Calendar Added Successfully\n\n` +
+              `- **Name**: ${cal.summary || "(No name)"}\n` +
+              `- **ID**: ${cal.id}\n` +
+              `- **Access Role**: ${cal.accessRole}\n` +
+              `\nThis calendar will now appear in gcal_list_calendars.`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: handleApiError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+server.registerTool(
   "gcal_create_event",
   {
     title: "Create Google Calendar Event",
