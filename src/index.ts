@@ -222,12 +222,14 @@ const ListEventsSchema = z
       .string()
       .optional()
       .describe(
-        "Lower bound for event start time (ISO8601). Defaults to now."
+        "Lower bound for event start time as RFC3339 timestamp with timezone (e.g., '2025-02-15T00:00:00Z' or '2025-02-15T00:00:00-08:00'). Date-only strings are NOT accepted. Defaults to now."
       ),
     time_max: z
       .string()
       .optional()
-      .describe("Upper bound for event start time (ISO8601)"),
+      .describe(
+        "Upper bound for event start time as RFC3339 timestamp with timezone (e.g., '2025-02-16T00:00:00Z' or '2025-02-16T00:00:00-08:00'). Date-only strings are NOT accepted."
+      ),
     query: z
       .string()
       .optional()
