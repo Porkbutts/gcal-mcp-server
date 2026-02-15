@@ -35,9 +35,6 @@ export GOOGLE_SERVICE_ACCOUNT_KEY_PATH=/path/to/service-account-key.json
 
 # Option 2: Inline JSON content
 export GOOGLE_SERVICE_ACCOUNT_KEY='{"client_email":"...","private_key":"..."}'
-
-# Optional: Default calendar ID (defaults to 'primary')
-export GOOGLE_CALENDAR_ID=your-calendar-id@group.calendar.google.com
 ```
 
 ## Usage with Claude Code
@@ -47,8 +44,7 @@ claude mcp add-json gcal '{
   "command": "node",
   "args": ["/path/to/gcal-mcp-server/dist/index.js"],
   "env": {
-    "GOOGLE_SERVICE_ACCOUNT_KEY_PATH": "/path/to/service-account-key.json",
-    "GOOGLE_CALENDAR_ID": "your-calendar-id@group.calendar.google.com"
+    "GOOGLE_SERVICE_ACCOUNT_KEY_PATH": "/path/to/service-account-key.json"
   }
 }'
 ```
@@ -77,7 +73,7 @@ Create a new event on a Google Calendar.
 - `description`: Event description
 - `location`: Event location
 - `timezone`: Timezone (e.g., `America/Los_Angeles`)
-- `calendar_id`: Target calendar (defaults to env var or `primary`)
+- `calendar_id` (required): Target calendar ID (use `gcal_list_calendars` to find IDs)
 
 **Example:**
 ```
@@ -136,7 +132,7 @@ Delete an event from the calendar.
 
 ### Multiple Calendars
 
-The service account can access any calendar shared with it. The `GOOGLE_CALENDAR_ID` env var sets a default, but you can pass `calendar_id` to any tool to target a different calendar. To set up multiple calendars:
+The service account can access any calendar shared with it. To set up multiple calendars:
 
 1. Share each calendar with the service account's `client_email`
 2. Call `gcal_add_calendar` once per calendar to register it

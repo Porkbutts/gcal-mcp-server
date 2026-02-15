@@ -18,7 +18,6 @@ type CalendarEvent = calendar_v3.Schema$Event;
 // Environment variables
 const SERVICE_ACCOUNT_KEY_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
 const SERVICE_ACCOUNT_KEY_JSON = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-const DEFAULT_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "primary";
 
 // Google Calendar client (initialized on first use)
 let calendarClient: calendar_v3.Calendar | null = null;
@@ -167,9 +166,8 @@ const CreateEventSchema = z
   .object({
     calendar_id: z
       .string()
-      .optional()
       .describe(
-        "Calendar ID. Uses GOOGLE_CALENDAR_ID env var if not provided, or 'primary' as fallback"
+        "Calendar ID (use gcal_list_calendars to find IDs)"
       ),
     summary: z
       .string()
@@ -209,8 +207,7 @@ const ListEventsSchema = z
   .object({
     calendar_id: z
       .string()
-      .optional()
-      .describe("Calendar ID. Uses GOOGLE_CALENDAR_ID env var if not provided"),
+      .describe("Calendar ID (use gcal_list_calendars to find IDs)"),
     max_results: z
       .number()
       .int()
@@ -241,8 +238,7 @@ const GetEventSchema = z
   .object({
     calendar_id: z
       .string()
-      .optional()
-      .describe("Calendar ID. Uses GOOGLE_CALENDAR_ID env var if not provided"),
+      .describe("Calendar ID (use gcal_list_calendars to find IDs)"),
     event_id: z.string().describe("ID of the event to retrieve"),
   })
   .strict();
@@ -251,8 +247,7 @@ const UpdateEventSchema = z
   .object({
     calendar_id: z
       .string()
-      .optional()
-      .describe("Calendar ID. Uses GOOGLE_CALENDAR_ID env var if not provided"),
+      .describe("Calendar ID (use gcal_list_calendars to find IDs)"),
     event_id: z.string().describe("ID of the event to update"),
     summary: z
       .string()
@@ -286,8 +281,7 @@ const DeleteEventSchema = z
   .object({
     calendar_id: z
       .string()
-      .optional()
-      .describe("Calendar ID. Uses GOOGLE_CALENDAR_ID env var if not provided"),
+      .describe("Calendar ID (use gcal_list_calendars to find IDs)"),
     event_id: z.string().describe("ID of the event to delete"),
   })
   .strict();
@@ -461,7 +455,7 @@ Returns the created event details including its ID and link.`,
   async (params) => {
     try {
       const calendar = await getCalendarClient();
-      const calendarId = params.calendar_id || DEFAULT_CALENDAR_ID;
+      const calendarId = params.calendar_id;
 
       const eventBody: CalendarEvent = {
         summary: params.summary,
@@ -544,7 +538,7 @@ By default, returns upcoming events starting from now.`,
   async (params) => {
     try {
       const calendar = await getCalendarClient();
-      const calendarId = params.calendar_id || DEFAULT_CALENDAR_ID;
+      const calendarId = params.calendar_id;
 
       const response = await calendar.events.list({
         calendarId,
@@ -610,7 +604,7 @@ times, location, and link.`,
   async (params) => {
     try {
       const calendar = await getCalendarClient();
-      const calendarId = params.calendar_id || DEFAULT_CALENDAR_ID;
+      const calendarId = params.calendar_id;
 
       const response = await calendar.events.get({
         calendarId,
@@ -661,7 +655,7 @@ unprovided fields will be preserved.`,
   async (params) => {
     try {
       const calendar = await getCalendarClient();
-      const calendarId = params.calendar_id || DEFAULT_CALENDAR_ID;
+      const calendarId = params.calendar_id;
 
       // First, get the existing event
       const existingResponse = await calendar.events.get({
@@ -754,7 +748,7 @@ This action is irreversible. The event will be permanently removed.`,
   async (params) => {
     try {
       const calendar = await getCalendarClient();
-      const calendarId = params.calendar_id || DEFAULT_CALENDAR_ID;
+      const calendarId = params.calendar_id;
 
       await calendar.events.delete({
         calendarId,
@@ -789,13 +783,6 @@ async function main() {
       "WARNING: No Google service account credentials configured.\n" +
         "Set GOOGLE_SERVICE_ACCOUNT_KEY_PATH or GOOGLE_SERVICE_ACCOUNT_KEY.\n" +
         "The server will start but API calls will fail."
-    );
-  }
-
-  if (!process.env.GOOGLE_CALENDAR_ID) {
-    console.error(
-      "NOTE: GOOGLE_CALENDAR_ID environment variable is not set.\n" +
-        "Using 'primary' as default. You can provide calendar_id in each tool call."
     );
   }
 
